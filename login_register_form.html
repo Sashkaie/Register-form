@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <title>ავტორიზაცია</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #f3e5f5, #ede7f6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 40px 35px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 30px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 0;
+      margin: 0 5px;
+      border: none;
+      border-radius: 8px;
+      background: #d1c4e9;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .tab-btn.active {
+      background: #6a1b9a;
+      color: white;
+    }
+
+    form {
+      display: none;
+    }
+
+    form.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 18px;
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      font-size: 16px;
+      background: #6a1b9a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #4a0072;
+    }
+
+    #response {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: 600;
+      color: #d32f2f;
+    }
+
+    #response.success {
+      color: #388e3c;
+    }
+
+    #userInfo {
+      margin-top: 20px;
+      padding: 15px;
+      background: #ede7f6;
+      border-left: 5px solid #6a1b9a;
+      border-radius: 10px;
+      display: none;
+      font-size: 15px;
+    }
+
+    #logoutBtn {
+      background: #d32f2f;
+      margin-top: 10px;
+    }
+
+    #logoutBtn:hover {
+      background: #9a0007;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="tabs">
+      <button id="loginTab" class="tab-btn active">შესვლა</button>
+      <button id="registerTab" class="tab-btn">რეგისტრაცია</button>
+    </div>
+
+    <form id="loginForm" class="active">
+      <label for="loginEmail">ელ-ფოსტა</label>
+      <input type="email" id="loginEmail" required />
+      <label for="loginPassword">პაროლი</label>
+      <input type="password" id="loginPassword" required />
+      <button type="submit">შესვლა</button>
+    </form>
+
+    <form id="registerForm">
+      <label for="username">სახელი</label>
+      <input type="text" id="username" required />
+      <label for="email">ელ-ფოსტა</label>
+      <input type="email" id="email" required />
+      <label for="password">პაროლი</label>
+      <input type="password" id="password" required />
+      <button type="submit">რეგისტრაცია</button>
+    </form>
+
+    <p id="response"></p>
+    <div id="userInfo"></div>
+    <button id="logoutBtn" style="display: none;">გასვლა</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      updateProfile,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCJqTnfj7nf7nHHL5o_Zmy6NvahXRX6Exk",
+      authDomain: "myaccount-base.firebaseapp.com",
+      projectId: "myaccount-base",
+      storageBucket: "myaccount-base.appspot.com",
+      messagingSenderId: "426546379336",
+      appId: "1:426546379336:web:7979daaffa496ffd75767d",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginTab = document.getElementById("loginTab");
+    const registerTab = document.getElementById("registerTab");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const response = document.getElementById("response");
+    const userInfo = document.getElementById("userInfo");
+
+    loginTab.addEventListener("click", () => {
+      loginTab.classList.add("active");
+      registerTab.classList.remove("active");
+      loginForm.classList.add("active");
+      registerForm.classList.remove("active");
+      response.textContent = "";
+    });
+
+    registerTab.addEventListener("click", () => {
+      registerTab.classList.add("active");
+      loginTab.classList.remove("active");
+      registerForm.classList.add("active");
+      loginForm.classList.remove("active");
+      response.textContent = "";
+    });
+
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: username });
+        response.textContent = "რეგისტრაცია დასრულდა წარმატებით!";
+        response.className = "success";
+        registerForm.reset();
+      } catch (error) {
+        response.textContent = error.message;
+        response.className = "";
+      }
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        response.textContent = "შესვლა წარმატებულია!";
+        response.className = "success";
+        loginForm.reset();
+      } catch (error) {
+        response.textContent = "შეცდომა: " + error.message;
+        response.className = "";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      userInfo.style.display = "none";
+      logoutBtn.style.display = "none";
+      response.textContent = "თქვენ გამოხვედით სისტემიდან.";
+      response.className = "";
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userInfo.innerHTML = `<strong>მოგესალმებით:</strong> ${user.displayName || user.email}`;
+        userInfo.style.display = "block";
+        logoutBtn.style.display = "block";
+      } else {
+        userInfo.style.display = "none";
+        logoutBtn.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
